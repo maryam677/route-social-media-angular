@@ -1,0 +1,101 @@
+
+<div class="min-h-screen bg-[#f1f3f6] text-slate-800">
+  <app-navbar [user]="user"></app-navbar>
+
+  <main class="max-w-5xl mx-auto px-4 py-5">
+    <a routerLink="/home" class="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm font-bold hover:bg-gray-50 mb-4">
+      <i class="fa-solid fa-arrow-left"></i>
+      Back to feed
+    </a>
+
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 md:p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-bold text-lg md:text-xl">
+          <i class="fa-solid fa-user-group text-blue-600 mr-2"></i>All Suggested Friends
+        </h2>
+        <span class="bg-gray-100 text-slate-600 rounded-full px-3 py-1 text-xs font-bold">
+          {{friends.length}}
+        </span>
+      </div>
+
+      <div class="relative mb-4">
+        <i class="fa-solid fa-magnifying-glass absolute left-4 top-4 text-gray-400"></i>
+        <input [(ngModel)]="searchText" placeholder="Search by name or username..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 pl-11 text-sm outline-none focus:border-blue-400">
+      </div>
+
+      @if(errorMessage){
+        <div class="bg-red-50 text-red-600 rounded-xl p-3 text-sm mb-4">
+          {{errorMessage}}
+          <button type="button" (click)="getFriends()" class="ml-3 underline cursor-pointer">
+            Try again
+          </button>
+        </div>
+      }
+
+      @if(loading && friends.length === 0){
+        <div class="text-center text-gray-500 py-10">
+          <i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading friends...
+        </div>
+      }
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        @for(friend of filteredFriends; track friend._id || friend.id || $index){
+          <div class="border border-gray-200 rounded-xl p-4">
+            <div class="flex items-center gap-3">
+              <a [routerLink]="['/profile', friend._id || friend.id]" class="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80">
+                @if(userImage(friend)){
+                  <img [src]="userImage(friend)" alt="Friend" class="w-12 h-12 rounded-full object-cover shrink-0">
+                }@else{
+                  <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0">
+                    {{(friend.name || 'U').charAt(0).toUpperCase()}}
+                  </div>
+                }
+
+                <div class="flex-1 min-w-0">
+                  <h3 class="font-bold text-sm truncate hover:text-blue-600">{{friend.name || 'User'}}</h3>
+                  <p class="text-xs text-gray-500 truncate">{{'@' + (friend.username || 'user')}}</p>
+                </div>
+              </a>
+
+              <button type="button" (click)="followFriend(friend)" [disabled]="!!followingId"
+                [class.bg-blue-50]="!followingIds.has(friend._id || friend.id)"
+                [class.text-blue-600]="!followingIds.has(friend._id || friend.id)"
+                [class.bg-white]="followingIds.has(friend._id || friend.id)"
+                [class.text-slate-800]="followingIds.has(friend._id || friend.id)"
+                [class.border-gray-300]="followingIds.has(friend._id || friend.id)"
+                class="border border-transparent rounded-full px-3 py-2 text-xs font-bold whitespace-nowrap cursor-pointer disabled:opacity-50">
+                @if(followingId === (friend._id || friend.id)){
+                  <i class="fa-solid fa-spinner fa-spin mr-1"></i>Loading...
+                }@else if(followingIds.has(friend._id || friend.id)){
+                  <i class="fa-solid fa-check mr-1"></i>Following
+                }@else{
+                  <i class="fa-solid fa-user-plus mr-1"></i>Follow
+                }
+              </button>
+            </div>
+
+            @if(friend.followersCount !== null && friend.followersCount !== undefined){
+              <p class="inline-block bg-gray-100 text-gray-500 rounded-full text-xs px-2 py-1 mt-3">
+                {{friend.followersCount}} followers
+              </p>
+            }
+          </div>
+        }
+      </div>
+
+      @if(!loading && filteredFriends.length === 0 && !errorMessage){
+        <p class="text-center text-gray-500 py-8 text-sm">No friends found.</p>
+      }
+
+      @if(hasMore){
+        <button type="button" (click)="viewMore()" [disabled]="loading" class="w-full mt-4 bg-gray-50 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-600 hover:bg-gray-100 cursor-pointer disabled:opacity-50">
+          @if(loading){
+            <i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading...
+          }@else{
+            View more
+          }
+        </button>
+      }
+    </div>
+  </main>
+</div>

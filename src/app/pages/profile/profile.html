@@ -1,0 +1,158 @@
+
+<div class="min-h-screen bg-[#f1f3f6] text-slate-900">
+  <app-navbar [user]="user" activePage="Profile"></app-navbar>
+
+  <main class="max-w-7xl mx-auto px-4 pb-8">
+    <div class="relative">
+      <div class="h-60 bg-gradient-to-r from-slate-900 via-[#294b73] to-[#73a5cd]"></div>
+
+      <div class="relative mx-4 md:mx-9 -mt-16 bg-white rounded-3xl shadow-sm px-5 md:px-8 pt-7 pb-8">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div class="flex items-center gap-4">
+            @if(userPhoto){
+              <img [src]="userPhoto" alt="Profile photo" class="w-28 h-28 rounded-full border-4 border-white shadow-md object-cover shrink-0">
+            }@else{
+              <div class="w-28 h-28 rounded-full border-4 border-white shadow-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-4xl shrink-0">
+                {{(user?.name || 'M').charAt(0).toUpperCase()}}
+              </div>
+            }
+
+            <div>
+              <h2 class="font-extrabold text-2xl md:text-3xl">{{user?.name || 'My Profile'}}</h2>
+              <p class="text-gray-500 text-lg mt-1">{{'@' + (user?.username || 'username')}}</p>
+              <span class="inline-flex items-center gap-2 bg-blue-50 text-blue-600 rounded-full text-xs font-bold px-4 py-2 mt-4">
+                <i class="fa-solid fa-user-group"></i>Route Posts member
+              </span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 w-full lg:w-[48%]">
+            <div class="border border-gray-200 rounded-2xl py-5 text-center">
+              <p class="text-gray-500 text-xs font-bold mb-2">FOLLOWERS</p>
+              <p class="text-3xl font-extrabold">{{followers}}</p>
+            </div>
+            <div class="border border-gray-200 rounded-2xl py-5 text-center">
+              <p class="text-gray-500 text-xs font-bold mb-2">FOLLOWING</p>
+              <p class="text-3xl font-extrabold">{{following}}</p>
+            </div>
+            <div class="border border-gray-200 rounded-2xl py-5 text-center">
+              <p class="text-gray-500 text-xs font-bold mb-2">BOOKMARKS</p>
+              <p class="text-3xl font-extrabold">{{totalSaved}}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mt-6">
+          <div class="lg:col-span-3 border border-gray-200 bg-[#f8fafc] rounded-2xl p-5 min-h-44">
+            <h3 class="font-bold text-sm mb-4">About</h3>
+            <p class="flex items-center gap-3 text-gray-600 text-sm">
+              <i class="fa-regular fa-envelope text-slate-500"></i>
+              {{user?.email || 'Email unavailable'}}
+            </p>
+            <p class="flex items-center gap-3 text-gray-600 text-sm mt-4">
+              <i class="fa-solid fa-user-group text-slate-500"></i>
+              Active on Route Posts
+            </p>
+          </div>
+
+          <div class="lg:col-span-2 flex flex-col gap-3">
+            <div class="border border-blue-100 bg-blue-50/60 rounded-2xl p-5 flex-1">
+              <p class="text-xs font-bold text-blue-700">MY POSTS</p>
+              <p class="text-2xl font-extrabold mt-2">{{totalPosts}}</p>
+            </div>
+            <div class="border border-blue-100 bg-blue-50/60 rounded-2xl p-5 flex-1">
+              <p class="text-xs font-bold text-blue-700">SAVED POSTS</p>
+              <p class="text-2xl font-extrabold mt-2">{{totalSaved}}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    @if(errorMessage){
+      <div class="mx-4 md:mx-0 bg-red-50 text-red-600 rounded-xl p-4 mt-5 flex items-center justify-between gap-3">
+        <span>{{errorMessage}}</span>
+        <button type="button" (click)="loadProfile()" class="underline cursor-pointer">Try again</button>
+      </div>
+    }
+
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm mt-6 p-4 flex items-center justify-between">
+      <div class="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+        <button type="button" (click)="changeTab('My Posts')" [class.bg-white]="activeTab === 'My Posts'" [class.text-blue-600]="activeTab === 'My Posts'" [class.shadow-sm]="activeTab === 'My Posts'" class="px-4 py-3 rounded-lg text-sm font-bold cursor-pointer">
+          <i class="fa-regular fa-file-lines mr-2"></i>My Posts
+        </button>
+        <button type="button" (click)="changeTab('Saved')" [class.bg-white]="activeTab === 'Saved'" [class.text-blue-600]="activeTab === 'Saved'" [class.shadow-sm]="activeTab === 'Saved'" class="px-4 py-3 rounded-lg text-sm font-bold cursor-pointer">
+          <i class="fa-regular fa-bookmark mr-2"></i>Saved
+        </button>
+      </div>
+      <span class="bg-blue-50 text-blue-600 rounded-full px-3 py-1 text-sm font-bold">
+        {{originalCount}}
+      </span>
+    </div>
+
+    @if(loading){
+      <div class="bg-white rounded-2xl p-12 mt-4 text-center text-gray-500">
+        <i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading profile...
+      </div>
+    }@else if(posts.length === 0){
+      <div class="bg-white rounded-2xl p-12 mt-4 text-center text-gray-500">
+        <i class="fa-regular fa-file-lines text-3xl mb-3"></i>
+        <p>{{activeTab === 'My Posts' ? 'No posts yet.' : 'No saved posts yet.'}}</p>
+      </div>
+    }@else{
+      <div class="flex flex-col gap-4 mt-4">
+        @for(post of posts; track post._id || $index){
+          @let original = getOriginal(post);
+
+          <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center gap-3 mb-4">
+              @if(getImage(post.user)){
+                <img [src]="getImage(post.user)" alt="Author" class="w-11 h-11 rounded-full object-cover">
+              }@else{
+                <div class="w-11 h-11 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">
+                  {{(post.user?.name || 'U').charAt(0).toUpperCase()}}
+                </div>
+              }
+              <div>
+                <p class="font-bold text-sm">{{post.user?.name || user?.name || 'User'}}</p>
+                <p class="text-gray-500 text-xs">
+                  {{post.createdAt | date:'medium'}}
+                  <i class="fa-solid fa-earth-americas ml-2"></i> Public
+                </p>
+              </div>
+            </div>
+
+            @if(post.body){
+              <p class="whitespace-pre-line text-sm mb-4">{{post.body}}</p>
+            }
+            @if(post.image){
+              <img [src]="post.image" alt="Post image" class="w-full rounded-xl mb-4 max-h-[600px] object-contain">
+            }
+
+            @if(original){
+              <div class="border border-gray-200 bg-gray-50 rounded-xl overflow-hidden">
+                <div class="p-4">
+                  <div class="flex items-center gap-3 mb-3">
+                    @if(getImage(original.user)){
+                      <img [src]="getImage(original.user)" alt="Original author" class="w-9 h-9 rounded-full object-cover">
+                    }@else{
+                      <div class="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">U</div>
+                    }
+                    <div>
+                      <p class="font-bold text-sm">{{original.user?.name || 'Original Post'}}</p>
+                      <p class="text-xs text-gray-500">{{'@' + (original.user?.username || 'user')}}</p>
+                    </div>
+                  </div>
+                  <p class="text-sm whitespace-pre-line">{{original.body}}</p>
+                </div>
+                @if(original.image){
+                  <img [src]="original.image" alt="Original post image" class="w-full max-h-[500px] object-contain">
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </main>
+</div>

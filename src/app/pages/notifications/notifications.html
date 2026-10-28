@@ -1,0 +1,77 @@
+
+<div class="min-h-screen bg-gray-100 text-slate-800">
+  <app-navbar [user]="user" activePage="Notifications"></app-navbar>
+
+  <main class="max-w-4xl mx-auto p-4 md:pt-8">
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+      <div class="flex flex-wrap justify-between items-start gap-4">
+        <div>
+          <h2 class="text-2xl font-bold">
+            <i class="fa-regular fa-bell text-blue-600 mr-2"></i>Notifications
+          </h2>
+          <p class="text-gray-500 mt-2 text-sm">Realtime updates for likes, comments, shares and follows.</p>
+        </div>
+        <button type="button" (click)="markAllRead()" [disabled]="markingAll || unreadCount === 0" class="text-blue-600 font-semibold text-sm cursor-pointer disabled:opacity-40">
+          <i class="fa-solid fa-check-double mr-2"></i>
+          {{markingAll ? 'Updating...' : 'Mark all as read'}}
+        </button>
+      </div>
+
+      <div class="flex gap-3 mt-6 mb-5">
+        <button type="button" (click)="activeTab = 'All'" [class.bg-blue-600]="activeTab === 'All'" [class.text-white]="activeTab === 'All'" class="rounded-full border border-gray-200 px-5 py-2 cursor-pointer">
+          All
+        </button>
+        <button type="button" (click)="activeTab = 'Unread'" [class.bg-blue-600]="activeTab === 'Unread'" [class.text-white]="activeTab === 'Unread'" class="rounded-full border border-gray-200 px-5 py-2 cursor-pointer">
+          Unread ({{unreadCount}})
+        </button>
+      </div>
+
+      @if(errorMessage){
+        <div class="bg-red-50 text-red-600 rounded-xl p-4 mb-4">{{errorMessage}}</div>
+        <button type="button" (click)="getNotifications()" class="text-blue-600 cursor-pointer mb-4">Try again</button>
+      }
+
+      @if(loading){
+        <div class="text-center text-gray-500 py-16">
+          <i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading notifications...
+        </div>
+      }@else if(filteredNotifications.length === 0){
+        <div class="text-center text-gray-500 py-16">
+          <i class="fa-regular fa-bell text-4xl text-gray-300"></i>
+          <h3 class="font-bold mt-4 text-gray-700">
+            {{activeTab === 'Unread' ? 'No unread notifications' : 'No notifications yet'}}
+          </h3>
+          <p class="text-sm mt-2">Your updates will appear here.</p>
+        </div>
+      }@else{
+        <div class="flex flex-col gap-3">
+          @for(notification of filteredNotifications; track notification._id || $index){
+            <button type="button" (click)="readNotification(notification)" [disabled]="busyId === notification._id" [class.bg-blue-50]="!isRead(notification)" class="w-full text-left border border-gray-200 rounded-xl p-4 cursor-pointer hover:bg-gray-50 disabled:opacity-60">
+              <div class="flex justify-between items-start gap-3">
+                <div class="flex gap-3">
+                  <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                    <i class="fa-regular fa-bell"></i>
+                  </div>
+                  <div>
+                    <p class="font-bold text-sm">
+                      {{notification.title || notification.actor?.name || 'New notification'}}
+                    </p>
+                    <p class="text-gray-600 text-sm mt-1">
+                      {{notification.message || notification.body || notification.content || notification.type || 'You have a new update'}}
+                    </p>
+                    <p class="text-gray-400 text-xs mt-2">
+                      {{notification.createdAt | date:'medium'}}
+                    </p>
+                  </div>
+                </div>
+                @if(!isRead(notification)){
+                  <span class="w-2 h-2 bg-blue-600 rounded-full shrink-0 mt-2"></span>
+                }
+              </div>
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </main>
+</div>

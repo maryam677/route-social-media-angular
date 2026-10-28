@@ -1,0 +1,59 @@
+
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-30">
+  <div class="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
+    <a routerLink="/home" class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-blue-900 text-white rounded-xl flex items-center justify-center font-bold text-[10px]">ROUTE</div>
+      <h1 class="text-xl font-bold">Route Posts</h1>
+    </a>
+    <div class="hidden md:flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-2xl p-1">
+      <a routerLink="/home" [class.bg-white]="activePage === 'Feed'" [class.text-blue-600]="activePage === 'Feed'" class="px-4 py-3 rounded-xl font-bold text-sm text-slate-600 hover:bg-white">
+        <i class="fa-solid fa-house mr-2"></i>Feed
+      </a>
+      <a routerLink="/profile" [class.bg-white]="activePage === 'Profile'" [class.text-blue-600]="activePage === 'Profile'" class="px-4 py-3 rounded-xl font-bold text-sm text-slate-600 hover:bg-white">
+        <i class="fa-regular fa-user mr-2"></i>Profile
+      </a>
+      <a routerLink="/notifications" [class.bg-white]="activePage === 'Notifications'" [class.text-blue-600]="activePage === 'Notifications'" class="px-4 py-3 rounded-xl font-bold text-sm text-slate-600 hover:bg-white">
+        <i class="fa-regular fa-bell mr-2"></i>Notifications
+      </a>
+    </div>
+    <div class="relative">
+      <button type="button" (click)="accountMenu = !accountMenu" class="flex items-center gap-3 px-3 py-2 border border-gray-200 rounded-full bg-gray-50 cursor-pointer">
+        @if(userImage()){
+          <img [src]="userImage()" class="w-9 h-9 rounded-full object-cover" alt="Profile">
+        }@else{
+          <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center">
+            {{(user?.name || 'M').charAt(0).toUpperCase()}}
+          </div>
+        }
+        <span class="hidden lg:block text-sm font-semibold">{{user?.name || 'My Account'}}</span>
+        <i class="fa-solid fa-bars text-gray-500"></i>
+      </button>
+      @if(accountMenu){
+        <div class="absolute right-0 top-14 w-48 bg-white border border-gray-200 rounded-xl shadow-lg p-2 z-40">
+          <a routerLink="/profile" (click)="accountMenu = false" class="block p-3 rounded-lg hover:bg-gray-100 text-sm">
+            <i class="fa-regular fa-user mr-2"></i>Profile
+          </a>
+          <a routerLink="/settings" (click)="accountMenu = false" class="block p-3 rounded-lg hover:bg-gray-100 text-sm">
+            <i class="fa-solid fa-gear mr-2"></i>Settings
+          </a>
+          <div class="border-t border-gray-200 my-1"></div>
+          <button type="button" (click)="logout()" class="w-full text-left p-3 rounded-lg hover:bg-red-50 text-red-500 text-sm cursor-pointer">
+            <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</nav>
+
+<div class="md:hidden flex justify-around bg-white border-b border-gray-200 py-3 text-sm">
+  <a routerLink="/home" [class.text-blue-600]="activePage === 'Feed'">
+    <i class="fa-solid fa-house mr-1"></i>Feed
+  </a>
+  <a routerLink="/profile" [class.text-blue-600]="activePage === 'Profile'">
+    <i class="fa-regular fa-user mr-1"></i>Profile
+  </a>
+  <a routerLink="/notifications" [class.text-blue-600]="activePage === 'Notifications'">
+    <i class="fa-regular fa-bell mr-1"></i>Notifications
+  </a>
+</div>

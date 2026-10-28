@@ -1,0 +1,135 @@
+
+<div class="min-h-screen bg-[#f1f3f6] text-slate-900">
+  <app-navbar [user]="myAccount" activePage="Profile"></app-navbar>
+
+  <main class="max-w-7xl mx-auto px-4 py-5">
+    <button type="button" (click)="goBack()" class="bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm font-bold cursor-pointer mb-4">
+      <i class="fa-solid fa-arrow-left mr-2"></i>Back
+    </button>
+
+    @if(errorMessage){
+      <div class="bg-red-50 text-red-600 p-4 rounded-xl mb-4">
+        {{errorMessage}}
+        <button type="button" (click)="getUser()" class="underline ml-2 cursor-pointer">Try again</button>
+      </div>
+    }
+
+    <div class="relative mb-5">
+      <div class="h-52 bg-gradient-to-r from-slate-900 via-[#294b73] to-[#6395bc] rounded-t-2xl"></div>
+
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm mx-0 md:mx-5 -mt-16 relative p-5 md:p-6">
+        @if(loading){
+          <p class="text-center text-gray-500 py-8">
+            <i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading profile...
+          </p>
+        }@else if(user){
+          <div class="flex flex-wrap items-center gap-4">
+            @if(userImage(user)){
+              <img [src]="userImage(user)" alt="User photo" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md">
+            }@else{
+              <div class="w-24 h-24 rounded-full bg-blue-100 border-4 border-white shadow-md flex items-center justify-center text-blue-700 text-3xl font-bold">
+                {{(user.name || 'U').charAt(0).toUpperCase()}}
+              </div>
+            }
+
+            <div class="flex-1 min-w-0">
+              <h2 class="text-2xl font-extrabold">{{user.name || 'User'}}</h2>
+              <p class="text-gray-500 mt-1">{{'@' + (user.username || 'user')}}</p>
+            </div>
+
+            @if((myAccount?._id || myAccount?.id) !== userId){
+              <button type="button" (click)="followUser()" [disabled]="following"
+                [class.bg-blue-600]="!isFollowing"
+                [class.text-white]="!isFollowing"
+                [class.bg-white]="isFollowing"
+                [class.text-slate-800]="isFollowing"
+                [class.border]="isFollowing"
+                [class.border-gray-300]="isFollowing"
+                class="rounded-lg px-6 py-3 font-bold text-sm cursor-pointer disabled:opacity-50 hover:opacity-90">
+                @if(following){
+                  <i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading...
+                }@else if(isFollowing){
+                  <i class="fa-solid fa-check mr-2"></i>Following
+                }@else{
+                  <i class="fa-solid fa-user-plus mr-2"></i>Follow
+                }
+              </button>
+            }
+          </div>
+        }
+
+        @if(followError){
+          <p class="text-red-500 text-sm mt-3">{{followError}}</p>
+        }
+      </div>
+    </div>
+
+    @if(postsError){
+      <div class="bg-red-50 text-red-600 rounded-xl p-4 mb-4">
+        {{postsError}}
+        <button type="button" (click)="getPosts()" class="underline ml-2 cursor-pointer">Try again</button>
+      </div>
+    }
+
+    @if(postsLoading){
+      <div class="bg-white border border-gray-200 rounded-2xl p-12 text-gray-500 text-center">
+        <i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading posts...
+      </div>
+    }@else if(posts.length === 0 && !postsError){
+      <div class="bg-white border border-gray-200 rounded-2xl p-12 text-gray-500 text-center">
+        No posts yet.
+      </div>
+    }@else{
+      <div class="flex flex-col gap-4">
+        @for(post of posts; track post._id || $index){
+          @let original = originalPost(post);
+
+          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div class="p-5">
+              <div class="flex items-center gap-3 mb-4">
+                @if(userImage(post.user || user)){
+                  <img [src]="userImage(post.user || user)" alt="Author" class="w-12 h-12 rounded-full object-cover">
+                }@else{
+                  <div class="w-12 h-12 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">
+                    {{(user?.name || 'U').charAt(0).toUpperCase()}}
+                  </div>
+                }
+
+                <div>
+                  <p class="font-bold text-sm">{{post.user?.name || user?.name || 'User'}}</p>
+                  <p class="text-gray-500 text-xs">
+                    {{'@' + (post.user?.username || user?.username || 'user')}}
+                    · {{post.createdAt | date:'medium'}}
+                    · <i class="fa-solid fa-earth-americas"></i> Public
+                  </p>
+                </div>
+
+                <i class="fa-solid fa-ellipsis ml-auto text-gray-400"></i>
+              </div>
+
+              @if(post.body){
+                <p class="text-sm whitespace-pre-line">{{post.body}}</p>
+              }
+            </div>
+
+            @if(post.image){
+              <img [src]="post.image" class="w-full max-h-[600px] object-contain" alt="Post image">
+            }
+
+            @if(original){
+              <div class="border border-gray-200 bg-gray-50 mx-5 mb-5 rounded-xl overflow-hidden">
+                <div class="p-4">
+                  <p class="font-bold text-sm">{{original.user?.name || 'Original Post'}}</p>
+                  <p class="text-sm mt-2 whitespace-pre-line">{{original.body}}</p>
+                </div>
+                @if(original.image){
+                  <img [src]="original.image" alt="Shared image" class="w-full max-h-[500px] object-contain">
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </main>
+</div>

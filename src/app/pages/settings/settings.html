@@ -1,0 +1,57 @@
+
+<div class="min-h-screen bg-[#f1f3f6] text-slate-900">
+  <app-navbar [user]="user"></app-navbar>
+
+  <main class="max-w-3xl mx-auto px-4 pt-5 pb-10">
+    <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-key"></i>
+        </div>
+        <div>
+          <h2 class="text-2xl font-extrabold">Change Password</h2>
+          <p class="text-sm text-gray-500 mt-1">Keep your account secure by using a strong password.</p>
+        </div>
+      </div>
+
+      <form (ngSubmit)="changePassword()" class="flex flex-col gap-5">
+        <div>
+          <label for="currentPassword" class="block text-sm font-bold mb-2">Current password</label>
+          <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" [(ngModel)]="currentPassword" placeholder="Enter current password" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-blue-400">
+        </div>
+
+        <div>
+          <label for="newPassword" class="block text-sm font-bold mb-2">New password</label>
+          <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" [(ngModel)]="newPassword" placeholder="Enter new password" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-blue-400">
+          <p class="text-xs text-gray-500 mt-2">At least 8 characters with uppercase, lowercase, number, and special character.</p>
+        </div>
+
+        <div>
+          <label for="confirmPassword" class="block text-sm font-bold mb-2">Confirm new password</label>
+          <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" [(ngModel)]="confirmPassword" placeholder="Re-enter new password" required class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none focus:border-blue-400">
+          @if(confirmPassword && newPassword !== confirmPassword){
+            <p class="text-red-500 text-xs mt-2">Passwords do not match</p>
+          }
+        </div>
+
+        @if(errorMessage){
+          <p class="bg-red-50 text-red-600 rounded-lg p-3 text-sm">{{errorMessage}}</p>
+        }
+
+        @if(successMessage){
+          <p class="bg-green-50 text-green-700 rounded-lg p-3 text-sm">
+            <i class="fa-solid fa-circle-check mr-2"></i>{{successMessage}}
+          </p>
+        }
+
+        <button type="submit" [disabled]="!canSubmit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl py-3 cursor-pointer disabled:bg-blue-300 disabled:cursor-not-allowed">
+          @if(loading){
+            <i class="fa-solid fa-spinner fa-spin mr-2"></i>Updating...
+          }@else{
+            Update password
+          }
+        </button>
+      </form>
+    </div>
+  </main>
+</div>

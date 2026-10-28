@@ -1,0 +1,372 @@
+
+<div class="min-h-screen bg-[#f1f3f6] text-slate-800">
+  <app-navbar [user]="currentUser" activePage="Feed"></app-navbar>
+
+  <div class="max-w-7xl mx-auto p-4 grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-4">
+    <aside class="md:col-span-1 lg:col-span-3">
+      <div class="bg-white border border-gray-200 rounded-2xl shadow-sm p-3 flex flex-col gap-1">
+        @for(tab of tabs; track tab.name){
+          <button type="button" (click)="changeTab(tab.name)" [class.bg-blue-50]="activeTab === tab.name" [class.text-blue-600]="activeTab === tab.name" class="w-full flex items-center gap-3 text-left rounded-xl px-4 py-3 font-bold text-sm cursor-pointer hover:bg-blue-50">
+            <i [class]="tab.icon" class="w-5 text-center"></i>
+            <span>{{tab.name}}</span>
+            @if(loading && activeTab === tab.name){
+              <i class="fa-solid fa-spinner fa-spin ml-auto"></i>
+            }
+          </button>
+        }
+      </div>
+    </aside>
+
+    <main class="md:col-span-3 lg:col-span-6 flex flex-col gap-4">
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+        <div class="flex items-center gap-3 mb-4">
+          @if(userImage(currentUser)){
+            <img [src]="userImage(currentUser)" alt="My profile" class="w-12 h-12 rounded-full object-cover">
+          }@else{
+            <div class="w-12 h-12 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">
+              {{(currentUser?.name || 'M').charAt(0).toUpperCase()}}
+            </div>
+          }
+          <div>
+            <h3 class="font-bold text-sm">{{currentUser?.name || 'My Account'}}</h3>
+            <div class="relative">
+              <button type="button" (click)="privacyMenu = !privacyMenu" class="bg-gray-100 text-gray-600 rounded-full px-3 py-1 text-xs cursor-pointer mt-1">
+                <i class="fa-solid fa-earth-americas mr-1"></i>Public
+                <i class="fa-solid fa-chevron-down ml-2"></i>
+              </button>
+              @if(privacyMenu){
+                <div class="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-3 text-xs w-48">
+                  Posts are public
+                  <button type="button" (click)="privacyMenu = false" class="block text-blue-600 mt-2 cursor-pointer">Close</button>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <textarea [(ngModel)]="postText" rows="5" [placeholder]="'What’s on your mind, ' + (currentUser?.name || 'there') + '?'" class="w-full bg-gray-50 border border-gray-200 rounded-2xl p-4 outline-none resize-y focus:border-blue-400"></textarea>
+
+        @if(selectedImage){
+          <div class="flex items-center justify-between mt-3 bg-blue-50 rounded-xl p-3">
+            <p class="text-sm text-blue-600 truncate">{{selectedImage.name}}</p>
+            <button type="button" (click)="selectedImage = null" class="text-red-500 cursor-pointer">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        }
+
+        <div class="border-t border-gray-300 mt-4 pt-3 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-3 text-sm text-gray-600">
+            <label class="cursor-pointer hover:text-blue-600">
+              <i class="fa-regular fa-image text-green-600 mr-1"></i>Photo/video
+              <input type="file" accept="image/*" (change)="chooseImage($event)" class="hidden">
+            </label>
+            <div class="relative">
+              <button type="button" (click)="toggleEmoji()" [disabled]="emojiLoading" class="cursor-pointer hover:bg-gray-100 rounded-lg px-2 py-2 disabled:opacity-50">
+                <i class="fa-regular fa-face-smile text-orange-500 mr-1"></i>Feeling/activity
+              </button>
+              @if(emojiOpen){
+                <div class="absolute bottom-full left-0 mb-3 w-[min(330px,85vw)] bg-white border border-gray-200 rounded-xl shadow-xl z-40 overflow-hidden">
+                  <div class="flex items-center justify-between px-3 py-2 border-b border-gray-200">
+                    <span class="font-semibold text-xs">Choose an emoji</span>
+                    <button type="button" (click)="emojiOpen = false" class="cursor-pointer">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+                  <emoji-picker class="light block w-full h-[350px]" (emoji-click)="addEmoji($event)"></emoji-picker>
+                </div>
+              }
+            </div>
+          </div>
+          <button type="button" (click)="createPost()" [disabled]="(!postText.trim() && !selectedImage) || posting" class="bg-blue-500 text-white font-bold px-6 py-3 rounded-xl text-sm cursor-pointer disabled:bg-blue-300">
+            {{posting ? 'Posting...' : 'Post'}}
+            <i class="fa-regular fa-paper-plane ml-2"></i>
+          </button>
+        </div>
+        @if(emojiError){<p class="text-red-500 text-sm mt-2">{{emojiError}}</p>}
+        @if(postError){<p class="text-red-500 text-sm mt-2">{{postError}}</p>}
+      </div>
+
+      @if(errorMessage){
+        <div class="bg-white border border-gray-200 rounded-xl p-4 flex justify-between gap-3">
+          <p class="text-red-500 text-sm">{{errorMessage}}</p>
+          <button type="button" (click)="errorMessage = ''" class="cursor-pointer">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      }
+
+      @if(loading){
+        <div class="bg-white rounded-2xl p-10 text-center text-gray-500">
+          <i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading posts...
+        </div>
+      }@else if(posts.length === 0 && !errorMessage){
+        <div class="bg-white rounded-2xl p-10 text-center text-gray-500">
+          {{activeTab === 'Saved' ? 'No saved posts yet.' : activeTab === 'My Posts' ? 'You have not posted yet.' : 'No posts yet.'}}
+        </div>
+      }@else{
+        @for(post of posts; track post._id || $index){
+          @let original = originalPost(post);
+          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4">
+            <div class="flex items-center justify-between mb-4">
+              <a [routerLink]="['/profile', post.user?._id || post.user?.id]" class="flex items-center gap-3 hover:opacity-80 cursor-pointer min-w-0">
+                @if(userImage(post.user)){
+                  <img [src]="userImage(post.user)" class="w-11 h-11 rounded-full object-cover shrink-0" alt="User">
+                }@else{
+                  <div class="w-11 h-11 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0">
+                    {{(post.user?.name || 'U').charAt(0).toUpperCase()}}
+                  </div>
+                }
+                <div class="min-w-0">
+                  <h3 class="font-bold text-sm hover:text-blue-600">{{post.user?.name || 'User'}}</h3>
+                  <p class="text-xs text-gray-500">
+                    {{'@' + (post.user?.username || 'user')}}
+                    · {{post.createdAt | date:'medium'}}
+                    · <i class="fa-solid fa-earth-americas"></i> Public
+                  </p>
+                  @if(original){
+                    <p class="text-xs text-blue-600 mt-1">
+                      <i class="fa-solid fa-retweet mr-1"></i>Shared a post
+                    </p>
+                  }
+                </div>
+              </a>
+
+              <div class="relative">
+                <button type="button" (click)="toggleMenu(post._id)" class="w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-full cursor-pointer">
+                  <i class="fa-solid fa-ellipsis"></i>
+                </button>
+                @if(openMenu === post._id){
+                  <div class="absolute right-0 top-11 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-20 p-2">
+                    <button type="button" (click)="savePost(post)" [disabled]="!!busyId" class="w-full text-left p-3 text-sm rounded-lg hover:bg-gray-100 cursor-pointer disabled:opacity-50">
+                      <i [class]="isSaved(post) ? 'fa-solid fa-bookmark' : 'fa-regular fa-bookmark'" class="mr-2"></i>
+                      {{isSaved(post) ? 'Unsave post' : 'Save post'}}
+                    </button>
+                    @if(isMyPost(post)){
+                      <button type="button" (click)="startEdit(post)" class="w-full text-left p-3 text-sm rounded-lg hover:bg-gray-100 cursor-pointer">
+                        <i class="fa-solid fa-pen mr-2"></i>Edit post
+                      </button>
+                      <button type="button" (click)="deletePost(post)" [disabled]="!!busyId" class="w-full text-left p-3 text-sm text-red-500 rounded-lg hover:bg-red-50 cursor-pointer disabled:opacity-50">
+                        <i class="fa-solid fa-trash mr-2"></i>Delete post
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+
+            @if(editingId === post._id){
+              <textarea [(ngModel)]="editText" rows="4" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3"></textarea>
+              <div class="flex justify-end gap-2 my-3">
+                <button type="button" (click)="cancelEdit()" class="bg-gray-100 rounded-lg px-4 py-2 cursor-pointer">Cancel</button>
+                <button type="button" (click)="updatePost(post)" [disabled]="!editText.trim() || !!busyId" class="bg-blue-600 text-white rounded-lg px-4 py-2 cursor-pointer disabled:opacity-50">
+                  Save changes
+                </button>
+              </div>
+            }@else{
+              @if(post.body){
+                <p class="mb-4 whitespace-pre-line text-sm">{{post.body}}</p>
+              }
+            }
+
+            @if(post.image){
+              <img [src]="post.image" class="w-full rounded-xl mb-4" alt="Post image">
+            }
+
+            @if(original){
+              <div class="border border-gray-200 bg-gray-50 rounded-xl overflow-hidden mb-4">
+                <div class="p-4">
+                  <div class="flex items-center justify-between gap-2 mb-3">
+                    <div class="flex items-center gap-2">
+                      @if(userImage(original.user)){
+                        <img [src]="userImage(original.user)" alt="Original author" class="w-9 h-9 rounded-full object-cover">
+                      }@else{
+                        <div class="w-9 h-9 bg-blue-100 rounded-full text-blue-700 font-bold flex items-center justify-center">
+                          {{(original.user?.name || 'U').charAt(0).toUpperCase()}}
+                        </div>
+                      }
+                      <div>
+                        <p class="font-bold text-sm">{{original.user?.name || 'Original post'}}</p>
+                        <p class="text-xs text-gray-500">{{'@' + (original.user?.username || 'user')}}</p>
+                      </div>
+                    </div>
+                    <span class="text-blue-600 text-xs font-semibold">Original Post</span>
+                  </div>
+                  <p class="text-sm whitespace-pre-line">{{original.body}}</p>
+                </div>
+                @if(original.image){
+                  <img [src]="original.image" alt="Original post image" class="w-full max-h-[500px] object-contain">
+                }
+              </div>
+            }
+
+            <div class="border-t border-gray-200 pt-3 flex justify-around gap-2 text-sm text-gray-600">
+              <button type="button" (click)="likePost(post)" [disabled]="!!busyId" [class.text-blue-600]="isLiked(post)" class="flex-1 py-2 rounded-lg hover:bg-gray-100 cursor-pointer disabled:opacity-50">
+                <i [class]="isLiked(post) ? 'fa-solid fa-thumbs-up' : 'fa-regular fa-thumbs-up'" class="mr-2"></i>
+                Like {{likeCounts[post._id]}}
+              </button>
+              <button type="button" (click)="toggleComments(post)" class="flex-1 py-2 rounded-lg hover:bg-gray-100 cursor-pointer">
+                <i class="fa-regular fa-comment mr-2"></i>Comment
+              </button>
+              <button type="button" (click)="openShare(post)" class="flex-1 py-2 rounded-lg hover:bg-gray-100 cursor-pointer">
+                <i class="fa-solid fa-share-nodes mr-2"></i>Share
+              </button>
+            </div>
+
+            @if(commentsOpen[post._id]){
+              <div class="border-t border-gray-200 pt-4 mt-3">
+                <h4 class="font-bold text-sm mb-3">Comments</h4>
+                @if(commentsLoading[post._id]){
+                  <p class="text-sm text-gray-500 mb-3">Loading comments...</p>
+                }@else{
+                  <div class="flex flex-col gap-3 mb-4">
+                    @for(comment of comments[post._id] || []; track comment._id || $index){
+                      <div class="flex gap-2">
+                        @if(userImage(comment.commentCreator || comment.user)){
+                          <img [src]="userImage(comment.commentCreator || comment.user)" class="w-9 h-9 rounded-full object-cover" alt="User">
+                        }@else{
+                          <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center">U</div>
+                        }
+                        <div class="bg-gray-50 rounded-xl p-3 flex-1">
+                          <p class="font-bold text-xs">{{comment.commentCreator?.name || comment.user?.name || 'User'}}</p>
+                          <p class="text-sm mt-1">{{comment.content || comment.body}}</p>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <form (ngSubmit)="addComment(post)" class="flex gap-2">
+                  <input [(ngModel)]="commentTexts[post._id]" name="comment-{{post._id}}" placeholder="Write a comment..." class="flex-1 min-w-0 bg-gray-50 border border-gray-200 rounded-xl p-3 outline-none">
+                  <button type="submit" [disabled]="!commentTexts[post._id]?.trim() || commentPosting[post._id]" class="bg-blue-600 text-white rounded-xl px-4 cursor-pointer disabled:opacity-50">
+                    <i class="fa-solid fa-paper-plane"></i>
+                  </button>
+                </form>
+                @if(commentErrors[post._id]){
+                  <p class="text-red-500 text-sm mt-2">{{commentErrors[post._id]}}</p>
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </main>
+
+    <aside class="hidden lg:block lg:col-span-3 sticky top-20 self-start">
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-base">
+            <i class="fa-solid fa-user-group text-blue-600 mr-2"></i>Suggested Friends
+          </h2>
+          <span class="bg-gray-100 rounded-full px-2 py-1 text-xs">{{friends.length}}</span>
+        </div>
+
+        <div class="relative mb-3">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-4 text-gray-400 text-xs"></i>
+          <input [(ngModel)]="searchText" placeholder="Search friends..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 pl-9 text-sm outline-none">
+        </div>
+
+        @if(friendsLoading){
+          <p class="text-gray-500 text-sm text-center py-4">Loading friends...</p>
+        }
+        @if(friendsError){
+          <p class="text-red-500 text-sm mb-3">{{friendsError}}</p>
+          <button type="button" (click)="getFriends()" class="text-blue-600 text-sm cursor-pointer mb-3">Try again</button>
+        }
+
+        <div class="flex flex-col gap-3">
+          @for(friend of filteredFriends; track friend._id || friend.id || $index){
+            <div class="border border-gray-200 rounded-xl p-3">
+              <div class="flex items-center gap-2">
+                <a [routerLink]="['/profile', friend._id || friend.id]" class="flex items-center gap-2 flex-1 min-w-0 cursor-pointer hover:opacity-80">
+                  @if(userImage(friend)){
+                    <img [src]="userImage(friend)" class="w-10 h-10 rounded-full object-cover shrink-0" alt="Friend">
+                  }@else{
+                    <div class="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold shrink-0">
+                      {{(friend.name || 'U').charAt(0).toUpperCase()}}
+                    </div>
+                  }
+                  <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-xs truncate hover:text-blue-600">{{friend.name || 'User'}}</h3>
+                    <p class="text-xs text-gray-500 truncate">{{'@' + (friend.username || 'user')}}</p>
+                  </div>
+                </a>
+
+                <button type="button" (click)="followFriend(friend)" [disabled]="!!followingId"
+                  [class.bg-blue-50]="!followingIds.has(friend._id || friend.id)"
+                  [class.text-blue-600]="!followingIds.has(friend._id || friend.id)"
+                  [class.bg-white]="followingIds.has(friend._id || friend.id)"
+                  [class.text-slate-800]="followingIds.has(friend._id || friend.id)"
+                  [class.border-gray-300]="followingIds.has(friend._id || friend.id)"
+                  class="border border-transparent rounded-full px-3 py-2 text-xs font-bold whitespace-nowrap cursor-pointer disabled:opacity-50">
+                  @if(followingId === (friend._id || friend.id)){
+                    <i class="fa-solid fa-spinner fa-spin mr-1"></i>Loading...
+                  }@else if(followingIds.has(friend._id || friend.id)){
+                    <i class="fa-solid fa-check mr-1"></i>Following
+                  }@else{
+                    <i class="fa-solid fa-user-plus mr-1"></i>Follow
+                  }
+                </button>
+              </div>
+
+              @if(friend.followersCount !== null && friend.followersCount !== undefined){
+                <p class="inline-block bg-gray-100 text-gray-500 rounded-full text-xs px-2 py-1 mt-3">
+                  {{friend.followersCount}} followers
+                </p>
+              }
+            </div>
+          }
+        </div>
+
+        <a routerLink="/suggestions" class="block w-full mt-3 bg-gray-50 border border-gray-200 rounded-xl py-3 text-center text-sm font-semibold text-gray-600 hover:bg-gray-100 cursor-pointer">
+          View more
+        </a>
+      </div>
+    </aside>
+  </div>
+
+  @if(sharePostData){
+    <div class="fixed inset-0 z-50 bg-slate-900/60 flex justify-center items-center p-4">
+      <div class="bg-white w-full max-w-xl rounded-2xl overflow-hidden shadow-2xl" role="dialog" aria-modal="true" aria-label="Share post">
+        <div class="flex justify-between items-center border-b border-gray-200 px-5 py-4">
+          <h2 class="font-bold text-lg">Share post</h2>
+          <button type="button" (click)="closeShare()" [disabled]="sharing" class="cursor-pointer text-gray-500">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="p-5">
+          <textarea [(ngModel)]="shareText" placeholder="Say something about this..." rows="3" class="w-full border border-gray-200 rounded-xl p-4 resize-none outline-none"></textarea>
+
+          <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mt-4">
+            <div class="flex gap-3 items-center mb-3">
+              @if(userImage(sharePostData.user)){
+                <img [src]="userImage(sharePostData.user)" class="w-9 h-9 rounded-full object-cover" alt="Original author">
+              }@else{
+                <div class="w-9 h-9 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">U</div>
+              }
+              <div>
+                <p class="font-bold text-sm">{{sharePostData.user?.name || 'User'}}</p>
+                <p class="text-gray-500 text-xs">{{'@' + (sharePostData.user?.username || 'user')}}</p>
+              </div>
+            </div>
+            <p class="text-sm whitespace-pre-line">{{sharePostData.body}}</p>
+            @if(sharePostData.image){
+              <img [src]="sharePostData.image" class="w-full rounded-xl mt-3 max-h-52 object-cover" alt="Post">
+            }
+          </div>
+          @if(shareError){
+            <p class="text-red-500 text-sm mt-3">{{shareError}}</p>
+          }
+        </div>
+
+        <div class="flex justify-end gap-2 px-5 py-4 border-t border-gray-200">
+          <button type="button" (click)="closeShare()" [disabled]="sharing" class="border border-gray-200 rounded-lg px-5 py-2 cursor-pointer">Cancel</button>
+          <button type="button" (click)="shareNow()" [disabled]="sharing" class="bg-blue-600 text-white rounded-lg px-5 py-2 cursor-pointer disabled:opacity-50">
+            {{sharing ? 'Sharing...' : 'Share now'}}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
